@@ -27,7 +27,10 @@ public final class RenderState {
      * Otherwise, The {@link IllegalRenderStateException#IllegalRenderStateException() Exception} will be thrown.
      * @param run Run a task what you want.
      */
-    public synchronized void createThread(IntConsumer run){
+    public synchronized void createThread(IntConsumer run) throws InterruptedException{
+        if(currentThread != null){
+            cancel();
+        }
         int currentID = currentID();
         currentThread = TaskManager.runTask(() -> run.accept(currentID));
     }
@@ -40,9 +43,17 @@ public final class RenderState {
         if (currentThread != null) {
             createBreakpoint();
             currentThread.interrupt();
-            currentThread.join();
+            join();
             currentThread = null;
         }
+    }
+
+    /**
+     * Wait until the task is finished.
+     * @throws InterruptedException When {@link Thread#interrupt()} has invoked during {@link Thread#join()}.
+     */
+    public synchronized void join() throws InterruptedException{
+        currentThread.join();
     }
 
     /**
