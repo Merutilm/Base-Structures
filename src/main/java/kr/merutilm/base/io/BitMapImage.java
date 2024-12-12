@@ -90,7 +90,7 @@ public class BitMapImage {
     }
     public ShaderDispatcher createShader(ShaderRenderer... renderers) throws IllegalRenderStateException{
         RenderState state = new RenderState();
-        ShaderDispatcher dispatcher = new ShaderDispatcher(state, state.getId(), getBitMap());
+        ShaderDispatcher dispatcher = new ShaderDispatcher(state, state.currentID(), getBitMap());
         for (ShaderRenderer renderer : renderers) {
             dispatcher.createRenderer(renderer);
         }

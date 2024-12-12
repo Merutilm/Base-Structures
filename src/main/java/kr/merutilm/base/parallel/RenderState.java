@@ -1,33 +1,61 @@
 package kr.merutilm.base.parallel;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntConsumer;
 
 import kr.merutilm.base.exception.IllegalRenderStateException;
+import kr.merutilm.base.util.TaskManager;
 
 
 public final class RenderState {
 
-    private AtomicInteger id = new AtomicInteger();
+    private AtomicInteger stateID = new AtomicInteger();
+
+    private Thread currentThread = null;
     /**
-     * 고유 값과 ID가 일치하지 않으면 예외를 발생시킵니다.
+     * Throws the {@link IllegalRenderStateException#IllegalRenderStateException() Exception} when state ID and current ID do not match
      * @see RenderState#createBreakpoint()
      */
-    public void tryBreak(int id) throws IllegalRenderStateException {
-        if (id != this.id.get()) {
+    public void tryBreak(int currentID) throws IllegalRenderStateException {
+        if (currentID != this.stateID.get()) {
             throw new IllegalRenderStateException("Render ID Changed during rendering");
         }
     }
+
     /**
-     * 고유 값
+     * Creates The Thread. it only works if the state ID and current ID match.
+     * Otherwise, The {@link IllegalRenderStateException#IllegalRenderStateException() Exception} will be thrown.
+     * @param run Run a task what you want.
      */
-    public int getId() {
-        return id.get();
+    public synchronized void createThread(IntConsumer run){
+        int currentID = currentID();
+        currentThread = TaskManager.runTask(() -> run.accept(currentID));
+    }
+
+    /**
+     * Stops safely the thread.
+     * @throws InterruptedException When {@link Thread#interrupt()} has invoked during {@link Thread#join()}.
+     */
+    public synchronized void cancel() throws InterruptedException{
+        if (currentThread != null) {
+            createBreakpoint();
+            currentThread.interrupt();
+            currentThread.join();
+            currentThread = null;
+        }
+    }
+
+    /**
+     * get current ID
+     */
+    public int currentID() {
+        return stateID.get();
     }
     /**
-     * id를 증가시킵니다.
-     * 해당 메서드가 호출 된 후, 기존에 생성된 셰이더는 tryBreak() 구문에서 예외가 발생합니다.
+     * Increases ID value.
+     * The previously created thread will be thrown an {@link IllegalRenderStateException#IllegalRenderStateException() exception} and exit because the state ID and current ID do not match.
      */
-    public void createBreakpoint(){
-        id.getAndIncrement();
+    private void createBreakpoint(){
+        stateID.getAndIncrement();
     }
 }

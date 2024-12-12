@@ -209,7 +209,7 @@ public class BitMap extends IntMatrix {
         BitMap imaginedCanvas = cloneCanvas();
         int[] data = imaginedCanvas.getCanvas();
         RenderState state = new RenderState();
-        int id = state.getId();
+        int id = state.currentID();
         List<Point2D> nonnullPixels = new ArrayList<>();
 
         
